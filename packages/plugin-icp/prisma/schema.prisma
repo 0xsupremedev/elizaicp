@@ -1,0 +1,121 @@
+// Prisma schema for ICP ElizaOS Plugin
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("POSTGRES_URL")
+}
+
+model User {
+  id            String         @id @default(uuid())
+  telegramId    BigInt         @unique @map("telegram_id")
+  icPrincipal   String?        @unique @map("ic_principal")
+  username      String?
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
+  
+  tokenRequests TokenRequest[]
+  
+  @@map("users")
+}
+
+enum TokenStatus {
+  DRAFT
+  PENDING_APPROVAL
+  PENDING_ONCHAIN
+  MINTED
+  FAILED
+  
+  @@map("token_status")
+}
+
+model TokenRequest {
+  id            String       @id @default(uuid())
+  name          String
+  symbol        String
+  description   String       @db.Text
+  logoCid       String?      @map("logo_cid")  // IPFS CID or URL
+  logoPath      String?      @map("logo_path") // Local path if not uploaded
+  metadataHash  String?      @map("metadata_hash") // SHA-256 of token metadata
+  
+  requestorId   String       @map("requestor_id")
+  requestor     User         @relation(fields: [requestorId], references: [id], onDelete: Cascade)
+  
+  status        TokenStatus  @default(DRAFT)
+  seedOnchain   String?      @map("seed_onchain") // Hex-encoded raw_rand output
+  canisterTx    String?      @map("canister_tx")  // Transaction/request ID from canister
+  
+  twitter       String?
+  website       String?
+  telegram      String?
+  
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @updatedAt @map("updated_at")
+  
+  events        Event[]
+  
+  @@index([requestorId])
+  @@index([status])
+  @@index([canisterTx])
+  @@map("token_requests")
+}
+
+enum EventType {
+  TOKEN_CREATED
+  TOKEN_APPROVED
+  TOKEN_SUBMITTED
+  TOKEN_MINTED
+  TOKEN_FAILED
+  RANDOMNESS_GENERATED
+  TIMER_SCHEDULED
+  TIMER_EXECUTED
+  ERROR
+  
+  @@map("event_type")
+}
+
+model Event {
+  id              String       @id @default(uuid())
+  type            EventType
+  payload         Json         // Flexible JSONB storage for event data
+  tokenRequestId  String?      @map("token_request_id")
+  tokenRequest    TokenRequest? @relation(fields: [tokenRequestId], references: [id], onDelete: SetNull)
+  
+  createdAt       DateTime     @default(now()) @map("created_at")
+  
+  @@index([type])
+  @@index([tokenRequestId])
+  @@index([createdAt])
+  @@map("events")
+}
+
+enum JobStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+  CANCELLED
+  
+  @@map("job_status")
+}
+
+model ScheduledJob {
+  id            String      @id @default(uuid())
+  name          String      // Descriptive name (e.g., "close_claim_window")
+  payload       Json        // Job-specific data
+  executeAt     DateTime    @map("execute_at")
+  status        JobStatus   @default(PENDING)
+  attempts      Int         @default(0)
+  lastError     String?     @map("last_error") @db.Text
+  
+  createdAt     DateTime    @default(now()) @map("created_at")
+  updatedAt     DateTime    @updatedAt @map("updated_at")
+  completedAt   DateTime?   @map("completed_at")
+  
+  @@index([status])
+  @@index([executeAt])
+  @@map("scheduled_jobs")
+}

@@ -1,0 +1,72 @@
+name: Deploy Canisters
+
+on:
+  workflow_dispatch:
+    inputs:
+      network:
+        description: 'Network to deploy to'
+        required: true
+        default: 'ic'
+        type: choice
+        options:
+          - ic
+          - staging
+  push:
+    branches: [main]
+    paths:
+      - 'canisters/**'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install DFX
+        run: |
+          sh -ci "$(curl -fsSL https://internetcomputer.org/install.sh)"
+          echo "$HOME/.local/share/dfx/bin" >> $GITHUB_PATH
+
+      - name: Verify DFX installation
+        run: dfx --version
+
+      - name: Restore DFX identity
+        env:
+          DFX_IDENTITY_PEM: ${{ secrets.DFX_IDENTITY_PEM }}
+        run: |
+          mkdir -p ~/.config/dfx/identity/deployer
+          echo "$DFX_IDENTITY_PEM" > ~/.config/dfx/identity/deployer/identity.pem
+          chmod 600 ~/.config/dfx/identity/deployer/identity.pem
+          dfx identity use deployer
+
+      - name: Build canisters
+        working-directory: canisters/token_factory
+        run: |
+          dfx canister create --all --network ic || true
+          dfx build --network ic
+
+      - name: Deploy to Internet Computer
+        working-directory: canisters/token_factory
+        run: |
+          dfx deploy --network ic
+
+      - name: Get Canister ID
+        id: canister_id
+        working-directory: canisters/token_factory
+        run: |
+          CANISTER_ID=$(dfx canister id token_factory --network ic)
+          echo "canister_id=$CANISTER_ID" >> $GITHUB_OUTPUT
+          echo "✅ Deployed TokenFactory: $CANISTER_ID"
+
+      - name: Comment PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `🚀 Canisters deployed!\n\n**TokenFactory**: \`${{ steps.canister_id.outputs.canister_id }}\``
+            })

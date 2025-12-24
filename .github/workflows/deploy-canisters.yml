@@ -1,0 +1,45 @@
+name: Deploy Canisters
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  deploy:
+    name: Deploy to ICP
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install DFX
+        run: |
+          sh -ci "$(curl -fsSL https://internetcomputer.org/install.sh)"
+          echo "$HOME/bin" >> $GITHUB_PATH
+
+      - name: Setup DFX Identity
+        env:
+          DFX_IDENTITY_PEM: ${{ secrets.DFX_IDENTITY_PEM }}
+        run: |
+          mkdir -p ~/.config/dfx/identity/deployer
+          echo "$DFX_IDENTITY_PEM" > ~/.config/dfx/identity/deployer/identity.pem
+          dfx identity use deployer
+
+      - name: Build Canisters
+        working-directory: packages/plugin-icp/canisters/token_factory
+        run: |
+          dfx canister create --all --network ic || true
+          dfx build --network ic
+
+      - name: Deploy Canisters
+        working-directory: packages/plugin-icp/canisters/token_factory
+        run: |
+          dfx deploy --network ic
+
+      - name: Show Canister Info
+        working-directory: packages/plugin-icp/canisters/token_factory
+        run: |
+          echo "Canister ID: $(dfx canister id token_factory --network ic)"
+          dfx canister status token_factory --network ic
