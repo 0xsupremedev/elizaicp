@@ -2,12 +2,7 @@
   <h1>ElizaICP</h1>
   <p><strong>AI-Powered Meme Tokens with Provable On-Chain Randomness</strong></p>
   
-  <p>
   
-    <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square" alt="License"></a>
-    <a href="https://internetcomputer.org"><img src="https://img.shields.io/badge/Built%20on-ICP-6366F1?style=flat-square" alt="Built on ICP"></a>
-  </p>
-</div>
 
 ---
 
@@ -295,5 +290,6 @@ MIT
     <a href="https://github.com/your-username/eliza-icp">GitHub</a>
   </p>
 </div>
+
 
 
