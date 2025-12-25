@@ -25,11 +25,13 @@ jobs:
 
       - name: Install DFX
         run: |
-          curl -fsSL https://internetcomputer.org/install.sh | sh
+          DFXVM_INIT_YES=true sh -ci "$(curl -fsSL https://internetcomputer.org/install.sh)"
           echo "$HOME/.local/share/dfx/bin" >> $GITHUB_PATH
           
       - name: Verify DFX installation
-        run: dfx --version
+        run: |
+          export PATH="$HOME/.local/share/dfx/bin:$PATH"
+          dfx --version
 
       - name: Create or Restore Identity
         id: identity
