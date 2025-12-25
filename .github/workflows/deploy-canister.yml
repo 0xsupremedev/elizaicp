@@ -1,0 +1,99 @@
+name: Deploy ICP Canister (100% Online)
+
+on:
+  workflow_dispatch:
+    inputs:
+      network:
+        description: 'Network to deploy to'
+        required: true
+        default: 'ic'
+        type: choice
+        options:
+          - ic
+          - local
+  push:
+    tags:
+      - 'v*'
+
+env:
+  DFX_VERSION: '0.15.0'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: read
+      id-token: write
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install DFX
+        run: |
+          curl -fsSL https://internetcomputer.org/install.sh | sh
+          echo "$HOME/.local/share/dfx/bin" >> $GITHUB_PATH
+          
+      - name: Verify DFX installation
+        run: dfx --version
+
+      - name: Restore Deploy Identity
+        env:
+          DFX_IDENTITY_PEM: ${{ secrets.DFX_IDENTITY_PEM }}
+        run: |
+          echo "$DFX_IDENTITY_PEM" > deployer.pem
+          dfx identity import deployer deployer.pem --force
+          dfx identity use deployer
+          rm deployer.pem
+          
+      - name: Show Principal
+        run: |
+          echo "Deploying with principal: $(dfx identity get-principal)"
+
+      - name: Create Canister (if new)
+        working-directory: eliza/packages/plugin-icp/canisters/token_factory
+        run: |
+          dfx canister create token_factory --network ${{ github.event.inputs.network || 'ic' }} || true
+
+      - name: Build Canister
+        working-directory: eliza/packages/plugin-icp/canisters/token_factory
+        run: |
+          dfx build token_factory
+
+      - name: Deploy Canister
+        working-directory: eliza/packages/plugin-icp/canisters/token_factory
+        run: |
+          dfx deploy token_factory --network ${{ github.event.inputs.network || 'ic' }}
+
+      - name: Get Canister ID
+        id: canister_id
+        working-directory: eliza/packages/plugin-icp/canisters/token_factory
+        run: |
+          CANISTER_ID=$(dfx canister id token_factory --network ${{ github.event.inputs.network || 'ic' }})
+          echo "CANISTER_ID=$CANISTER_ID" >> $GITHUB_OUTPUT
+          echo "✅ Deployed canister: $CANISTER_ID"
+          echo "🔗 Dashboard: https://dashboard.internetcomputer.org/canister/$CANISTER_ID"
+
+      - name: Verify Deployment
+        working-directory: eliza/packages/plugin-icp/canisters/token_factory
+        run: |
+          dfx canister status token_factory --network ${{ github.event.inputs.network || 'ic' }}
+
+      - name: Create Deployment Summary
+        run: |
+          echo "## 🚀 Deployment Successful" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Canister ID:** \`${{ steps.canister_id.outputs.CANISTER_ID }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Dashboard:** [View on IC Dashboard](https://dashboard.internetcomputer.org/canister/${{ steps.canister_id.outputs.CANISTER_ID }})" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Network:** ${{ github.event.inputs.network || 'ic' }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Next Steps:" >> $GITHUB_STEP_SUMMARY
+          echo "1. Update \`.env.local\` with: \`NEXT_PUBLIC_CANISTER_ID=${{ steps.canister_id.outputs.CANISTER_ID }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "2. Deploy web app to Vercel" >> $GITHUB_STEP_SUMMARY
+          echo "3. Test on production" >> $GITHUB_STEP_SUMMARY
+
+    outputs:
+      canister_id: ${{ steps.canister_id.outputs.CANISTER_ID }}
