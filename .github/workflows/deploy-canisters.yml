@@ -43,6 +43,12 @@ jobs:
           export PATH="$HOME/.local/share/dfx/bin:$PATH"
           dfx identity new deployer --storage-mode plaintext || true
           dfx identity use deployer
+
+      - name: Redeem Cycles Coupon
+        run: |
+          export PATH="$HOME/.local/share/dfx/bin:$PATH"
+          dfx cycles --network ic redeem-faucet-coupon AIAGENT2025 || echo "Coupon already redeemed or error"
+          dfx cycles --network ic balance
           
       - name: Deploy Canister
         working-directory: packages/plugin-icp/canisters/token_factory
