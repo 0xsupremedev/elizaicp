@@ -25,7 +25,12 @@ jobs:
 
       - name: Install DFX
         run: |
-          DFXVM_INIT_YES=true sh -ci "$(curl -fsSL https://internetcomputer.org/install.sh)"
+          DFX_VERSION="0.23.0"
+          wget https://github.com/dfinity/sdk/releases/download/${DFX_VERSION}/dfx-${DFX_VERSION}-x86_64-linux.tar.gz
+          tar -xzf dfx-${DFX_VERSION}-x86_64-linux.tar.gz
+          mkdir -p $HOME/.local/share/dfx/bin
+          mv dfx $HOME/.local/share/dfx/bin/
+          chmod +x $HOME/.local/share/dfx/bin/dfx
           echo "$HOME/.local/share/dfx/bin" >> $GITHUB_PATH
           
       - name: Verify DFX installation
