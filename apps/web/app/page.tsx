@@ -1,4 +1,7 @@
+'use client'
+
 import Button from '@/components/Button'
+import FluidCTA from '@/components/FluidCTA'
 import { FiMessageCircle, FiArrowRight, FiShield, FiZap, FiLock, FiCpu } from 'react-icons/fi'
 import { SiInternetcomputer } from 'react-icons/si'
 
@@ -18,12 +21,13 @@ export default function HomePage() {
                         using verifiable randomness from ICP's threshold cryptography.
                     </p>
 
-                    {/* CTA Buttons */}
+                    {/* Fluid CTA Button */}
+                    <div className="flex justify-center mb-8">
+                        <FluidCTA buttonText="Start Creating Tokens" />
+                    </div>
+
+                    {/* Secondary buttons */}
                     <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
-                        <Button href={process.env.NEXT_PUBLIC_TELEGRAM_URL || '#'} external variant="primary" size="lg">
-                            <FiMessageCircle className="w-5 h-5" />
-                            <span>Open Telegram Bot</span>
-                        </Button>
                         <Button href="/demo" variant="secondary" size="lg">
                             <span>View Live Demo</span>
                             <FiArrowRight className="w-5 h-5" />
@@ -155,17 +159,14 @@ export default function HomePage() {
                 </div>
             </section>
 
-            {/* CTA Section */}
+            {/* CTA Section with Fluid Animation */}
             <section className="section bg-card/30">
                 <div className="container text-center max-w-2xl">
                     <h2 className="text-h3 text-white mb-4">Ready to Create?</h2>
                     <p className="text-gray-400 mb-8">
                         Start creating AI-powered meme tokens with provable fairness in minutes.
                     </p>
-                    <Button href={process.env.NEXT_PUBLIC_TELEGRAM_URL || '#'} external variant="primary" size="lg">
-                        <FiMessageCircle className="w-5 h-5" />
-                        <span>Launch Telegram Bot</span>
-                    </Button>
+                    <FluidCTA buttonText="Launch Token Creator" />
                 </div>
             </section>
         </div>
