@@ -233,37 +233,95 @@ function ArchitectureSection() {
                 </p>
             </div>
 
-            <div className="p-6 bg-muted rounded-lg">
-                <pre className="text-xs md:text-sm text-gray-300 overflow-x-auto">
-                    {`┌─────────────────────────────────────────────────────────────┐
-│                    USER LAYER                               │
-│  ┌─────────────────┐    ┌─────────────────────────────┐    │
-│  │  Telegram Bot   │    │   Web App (Next.js)         │    │
-│  └────────┬────────┘    └───────────────┬─────────────┘    │
-└───────────┼─────────────────────────────┼──────────────────┘
-            │                             │
-            ▼                             ▼
-┌─────────────────────────────────────────────────────────────┐
-│               ELIZAOS PLUGIN (Node.js/TypeScript)           │
-│  ┌───────────────┐  ┌───────────────┐  ┌───────────────┐   │
-│  │   Commands    │  │   Services    │  │  Middleware   │   │
-│  │  /create_token│  │   OpenAI      │  │  Rate Limiter │   │
-│  │  /link_identity│ │   PostgreSQL  │  │               │   │
-│  │  /status      │  │   ICP Agent   │  │               │   │
-│  └───────────────┘  └───────────────┘  └───────────────┘   │
-└─────────────────────────────┬───────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│            INTERNET COMPUTER (ICP)                          │
-│  ┌───────────────────────────────────────────────────────┐ │
-│  │         TokenFactory Canister (Motoko)                 │ │
-│  │  • raw_rand() - Cryptographic randomness               │ │
-│  │  • Stable Storage - Upgrade-safe persistence           │ │
-│  │  • Timers - Scheduled tasks                            │ │
-│  └───────────────────────────────────────────────────────┘ │
-└─────────────────────────────────────────────────────────────┘`}
-                </pre>
+            {/* Visual Architecture Diagram */}
+            <div className="space-y-4">
+                {/* User Layer */}
+                <div className="p-4 bg-gradient-to-r from-purple-500/10 to-indigo-500/10 border border-purple-500/30 rounded-xl">
+                    <h4 className="text-xs font-semibold text-purple-400 mb-3 uppercase tracking-wider">User Layer</h4>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="bg-card p-4 rounded-lg border border-white/10 text-center">
+                            <FiMessageCircle className="w-8 h-8 text-accent mx-auto mb-2" />
+                            <p className="font-medium text-white text-sm">Telegram Bot</p>
+                            <p className="text-xs text-gray-500">User Interface</p>
+                        </div>
+                        <div className="bg-card p-4 rounded-lg border border-white/10 text-center">
+                            <FiGlobe className="w-8 h-8 text-accent mx-auto mb-2" />
+                            <p className="font-medium text-white text-sm">Web App</p>
+                            <p className="text-xs text-gray-500">Next.js</p>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Arrow */}
+                <div className="flex justify-center">
+                    <div className="w-0.5 h-6 bg-gradient-to-b from-purple-500 to-green-500"></div>
+                </div>
+
+                {/* Plugin Layer */}
+                <div className="p-4 bg-gradient-to-r from-green-500/10 to-teal-500/10 border border-green-500/30 rounded-xl">
+                    <h4 className="text-xs font-semibold text-green-400 mb-3 uppercase tracking-wider">ElizaOS Plugin (Node.js/TypeScript)</h4>
+                    <div className="grid grid-cols-3 gap-3">
+                        <div className="bg-card p-3 rounded-lg border border-white/10">
+                            <FiTerminal className="w-5 h-5 text-accent mb-2" />
+                            <p className="font-medium text-white text-xs">Commands</p>
+                            <div className="mt-2 space-y-1">
+                                <code className="block text-[10px] text-gray-500">/create_token</code>
+                                <code className="block text-[10px] text-gray-500">/link_identity</code>
+                                <code className="block text-[10px] text-gray-500">/status</code>
+                            </div>
+                        </div>
+                        <div className="bg-card p-3 rounded-lg border border-white/10">
+                            <FiDatabase className="w-5 h-5 text-accent mb-2" />
+                            <p className="font-medium text-white text-xs">Services</p>
+                            <div className="mt-2 space-y-1">
+                                <span className="block text-[10px] text-gray-500">OpenAI</span>
+                                <span className="block text-[10px] text-gray-500">PostgreSQL</span>
+                                <span className="block text-[10px] text-gray-500">ICP Agent</span>
+                            </div>
+                        </div>
+                        <div className="bg-card p-3 rounded-lg border border-white/10">
+                            <FiShield className="w-5 h-5 text-accent mb-2" />
+                            <p className="font-medium text-white text-xs">Middleware</p>
+                            <div className="mt-2 space-y-1">
+                                <span className="block text-[10px] text-gray-500">Rate Limiter</span>
+                                <span className="block text-[10px] text-gray-500">Auth</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Arrow */}
+                <div className="flex justify-center">
+                    <div className="w-0.5 h-6 bg-gradient-to-b from-green-500 to-red-500"></div>
+                </div>
+
+                {/* ICP Layer */}
+                <div className="p-4 bg-gradient-to-r from-red-500/10 to-orange-500/10 border border-red-500/30 rounded-xl">
+                    <h4 className="text-xs font-semibold text-red-400 mb-3 uppercase tracking-wider">Internet Computer (ICP)</h4>
+                    <div className="bg-card p-4 rounded-lg border border-white/10">
+                        <div className="flex items-center gap-3 mb-3">
+                            <FiCode className="w-6 h-6 text-accent" />
+                            <div>
+                                <p className="font-medium text-white">TokenFactory Canister</p>
+                                <p className="text-xs text-gray-500">Motoko Smart Contract</p>
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2 mt-3">
+                            <div className="bg-muted p-2 rounded text-center">
+                                <FiZap className="w-4 h-4 text-yellow-500 mx-auto mb-1" />
+                                <p className="text-[10px] text-gray-400">raw_rand()</p>
+                            </div>
+                            <div className="bg-muted p-2 rounded text-center">
+                                <FiDatabase className="w-4 h-4 text-blue-500 mx-auto mb-1" />
+                                <p className="text-[10px] text-gray-400">Stable Storage</p>
+                            </div>
+                            <div className="bg-muted p-2 rounded text-center">
+                                <FiClock className="w-4 h-4 text-green-500 mx-auto mb-1" />
+                                <p className="text-[10px] text-gray-400">Timers</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <div>
