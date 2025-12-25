@@ -13,26 +13,29 @@ on:
           - local
 
 env:
-  DFX_VERSION: '0.15.0'
+  DFX_VERSION: '0.23.0'
 
 jobs:
   setup-and-deploy:
     runs-on: ubuntu-latest
-    
+
+    outputs:
+      canister_id: ${{ steps.canister.outputs.CANISTER_ID }}
+      principal: ${{ steps.identity.outputs.PRINCIPAL }}
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Install DFX
         run: |
-          DFX_VERSION="0.23.0"
           wget https://github.com/dfinity/sdk/releases/download/${DFX_VERSION}/dfx-${DFX_VERSION}-x86_64-linux.tar.gz
           tar -xzf dfx-${DFX_VERSION}-x86_64-linux.tar.gz
           mkdir -p $HOME/.local/share/dfx/bin
           mv dfx $HOME/.local/share/dfx/bin/
           chmod +x $HOME/.local/share/dfx/bin/dfx
           echo "$HOME/.local/share/dfx/bin" >> $GITHUB_PATH
-          
+
       - name: Verify DFX installation
         run: |
           export PATH="$HOME/.local/share/dfx/bin:$PATH"
@@ -41,35 +44,36 @@ jobs:
       - name: Create or Restore Identity
         id: identity
         run: |
-          # Check if secret exists, if not create new identity
           if [ -z "${{ secrets.DFX_IDENTITY_PEM }}" ]; then
             echo "🔑 No identity found, creating new deployer identity..."
             dfx identity new deployer --storage-mode plaintext || true
             dfx identity use deployer
-            
-            # Export for display (will be shown in logs - save this!)
-            echo "📝 IMPORTANT: Save this identity for future use!"
+
+            PRINCIPAL=$(dfx identity get-principal)
+            echo "PRINCIPAL=$PRINCIPAL" >> $GITHUB_OUTPUT
+
             echo "====== BEGIN IDENTITY ======"
             dfx identity export deployer
             echo "====== END IDENTITY ======"
-            echo "⚠️  Add this to GitHub Secrets as DFX_IDENTITY_PEM"
           else
             echo "✅ Using existing identity from secrets"
             echo "${{ secrets.DFX_IDENTITY_PEM }}" > deployer.pem
             dfx identity import deployer deployer.pem --force
             dfx identity use deployer
             rm deployer.pem
+
+            PRINCIPAL=$(dfx identity get-principal)
+            echo "PRINCIPAL=$PRINCIPAL" >> $GITHUB_OUTPUT
           fi
-          
+
       - name: Show Principal
         run: |
-          echo "🔐 Deploying with principal: $(dfx identity get-principal)"
-          echo "PRINCIPAL=$(dfx identity get-principal)" >> $GITHUB_OUTPUT
+          echo "🔐 Deploying with principal: ${{ steps.identity.outputs.PRINCIPAL }}"
 
       - name: Create Canister
         working-directory: packages/plugin-icp/canisters/token_factory
         run: |
-          dfx canister create token_factory --network ${{ github.event.inputs.network || 'ic' }} || echo "Canister already exists"
+          dfx canister create token_factory --network ${{ github.event.inputs.network }}
 
       - name: Build Canister
         working-directory: packages/plugin-icp/canisters/token_factory
@@ -79,20 +83,20 @@ jobs:
       - name: Deploy Canister
         working-directory: packages/plugin-icp/canisters/token_factory
         run: |
-          dfx deploy token_factory --network ${{ github.event.inputs.network || 'ic' }} --yes
+          dfx deploy token_factory --network ${{ github.event.inputs.network }} --yes
 
       - name: Get Canister ID
         id: canister
         working-directory: packages/plugin-icp/canisters/token_factory
         run: |
-          CANISTER_ID=$(dfx canister id token_factory --network ${{ github.event.inputs.network || 'ic' }})
+          CANISTER_ID=$(dfx canister id token_factory --network ${{ github.event.inputs.network }})
           echo "CANISTER_ID=$CANISTER_ID" >> $GITHUB_OUTPUT
           echo "✅ Deployed canister: $CANISTER_ID"
 
       - name: Verify Deployment
         working-directory: packages/plugin-icp/canisters/token_factory
         run: |
-          dfx canister status token_factory --network ${{ github.event.inputs.network || 'ic' }}
+          dfx canister status token_factory --network ${{ github.event.inputs.network }}
 
       - name: Create Deployment Summary
         run: |
@@ -100,22 +104,9 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Canister Information" >> $GITHUB_STEP_SUMMARY
           echo "**Canister ID:** \`${{ steps.canister.outputs.CANISTER_ID }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Network:** ${{ github.event.inputs.network }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Principal:** ${{ steps.identity.outputs.PRINCIPAL }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Dashboard:** [View on IC Dashboard](https://dashboard.internetcomputer.org/canister/${{ steps.canister.outputs.CANISTER_ID }})" >> $GITHUB_STEP_SUMMARY
+          echo "Dashboard: https://dashboard.internetcomputer.org/canister/${{ steps.canister.outputs.CANISTER_ID }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Network:** ${{ github.event.inputs.network || 'ic' }}" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Principal:** ${{ steps.identity.outputs.PRINCIPAL || 'N/A' }}" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### 📋 Next Steps:" >> $GITHUB_STEP_SUMMARY
-          echo "1. Copy canister ID: \`${{ steps.canister.outputs.CANISTER_ID }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "2. Update Vercel env var: \`NEXT_PUBLIC_CANISTER_ID\`" >> $GITHUB_STEP_SUMMARY
-          echo "3. Deploy web app to production" >> $GITHUB_STEP_SUMMARY
-          echo "4. Test at https://dashboard.internetcomputer.org/canister/${{ steps.canister.outputs.CANISTER_ID }}" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### ⚠️ Important" >> $GITHUB_STEP_SUMMARY
-       echo "If this was your first deployment, save the identity from the logs above to GitHub Secrets as \`DFX_IDENTITY_PEM\`" >> $GITHUB_STEP_SUMMARY
-
-    outputs:
-      canister_id: ${{ steps.canister.outputs.CANISTER_ID }}
-      principal: ${{ steps.identity.outputs.PRINCIPAL }}
+          echo "⚠️ If this was your first deployment, save the identity PEM from logs into GitHub Secrets as DFX_IDENTITY_PEM" >> $GITHUB_STEP_SUMMARY
