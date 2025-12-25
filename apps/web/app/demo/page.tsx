@@ -1,38 +1,40 @@
+'use client'
+
+import { useState } from 'react'
 import TokenTable from '@/components/TokenTable'
 import Button from '@/components/Button'
-import { FiRefreshCw, FiExternalLink, FiActivity } from 'react-icons/fi'
-
-const mockTokens = [
-    {
-        id: 'abc123-0',
-        name: 'Moon Doge',
-        symbol: 'MDOGE',
-        status: 'minted' as const,
-        seedHash: 'd4f5e6a7b8c9d0e1f2a3b4c5d6e7f8a9',
-        createdAt: '2025-12-24T10:30:00Z',
-        canisterId: 'rrkah-fqaaa-aaaaa-aaaaq-cai',
-    },
-    {
-        id: 'def456-1',
-        name: 'Rocket Cat',
-        symbol: 'RCAT',
-        status: 'pending' as const,
-        seedHash: 'a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6',
-        createdAt: '2025-12-24T11:00:00Z',
-        canisterId: 'rrkah-fqaaa-aaaaa-aaaaq-cai',
-    },
-    {
-        id: 'ghi789-2',
-        name: 'Crypto Pepe',
-        symbol: 'CPEPE',
-        status: 'minted' as const,
-        seedHash: 'f1e2d3c4b5a6f7e8d9c0b1a2f3e4d5c6',
-        createdAt: '2025-12-24T09:15:00Z',
-        canisterId: 'rrkah-fqaaa-aaaaa-aaaaq-cai',
-    },
-]
+import { FiRefreshCw, FiExternalLink, FiActivity, FiAlertCircle } from 'react-icons/fi'
+import { useTokens } from '@/hooks/useCanister'
+import { getTokenStatus, seedToHex } from '@/lib/icp'
 
 export default function DemoPage() {
+    const [refreshKey, setRefreshKey] = useState(0)
+    const { tokens, loading, error } = useTokens(0, 20)
+
+    const handleRefresh = () => {
+        setRefreshKey(prev => prev + 1)
+        window.location.reload()
+    }
+
+    // Calculate stats from real tokens
+    const stats = {
+        total: tokens.length,
+        minted: tokens.filter(t => getTokenStatus(t.status) === 'minted').length,
+        pending: tokens.filter(t => getTokenStatus(t.status) === 'pending').length,
+        draft: tokens.filter(t => getTokenStatus(t.status) === 'draft').length,
+    }
+
+    // Convert ICP tokens to UI format
+    const uiTokens = tokens.map(t => ({
+        id: t.id,
+        name: t.name,
+        symbol: t.symbol,
+        status: getTokenStatus(t.status) as 'minted' | 'pending' | 'draft' | 'failed',
+        seedHash: seedToHex(t.seed),
+        createdAt: new Date(Number(t.createdAt) / 1000000).toISOString(), // Convert nanoseconds to ms
+        canisterId: process.env.NEXT_PUBLIC_CANISTER_ID || '',
+    }))
+
     return (
         <div className="section">
             <div className="container">
@@ -47,20 +49,26 @@ export default function DemoPage() {
                 {/* Stats */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
                     <div className="card text-center">
-                        <div className="text-2xl font-semibold text-accent mb-1">12</div>
+                        <div className="text-2xl font-semibold text-accent mb-1">
+                            {loading ? '...' : stats.total}
+                        </div>
                         <div className="text-xs text-gray-500">Tokens Created</div>
                     </div>
                     <div className="card text-center">
-                        <div className="text-2xl font-semibold text-success mb-1">8</div>
+                        <div className="text-2xl font-semibold text-success mb-1">
+                            {loading ? '...' : stats.minted}
+                        </div>
                         <div className="text-xs text-gray-500">Minted</div>
                     </div>
                     <div className="card text-center">
-                        <div className="text-2xl font-semibold text-warning mb-1">4</div>
+                        <div className="text-2xl font-semibold text-warning mb-1">
+                            {loading ? '...' : stats.pending}
+                        </div>
                         <div className="text-xs text-gray-500">Pending</div>
                     </div>
                     <div className="card text-center">
                         <div className="flex items-center justify-center gap-2">
-                            <FiActivity className="w-4 h-4 text-success" />
+                            <FiActivity className="w-4 h-4 text-success animate-pulse" />
                             <span className="text-sm text-success">Live</span>
                         </div>
                         <div className="text-xs text-gray-500 mt-1">From ICP</div>
@@ -69,13 +77,13 @@ export default function DemoPage() {
 
                 {/* Actions */}
                 <div className="flex flex-wrap gap-3 mb-6">
-                    <Button variant="outline" href="#">
-                        <FiRefreshCw className="w-4 h-4" />
-                        <span>Refresh Data</span>
+                    <Button variant="outline" onClick={handleRefresh} disabled={loading}>
+                        <FiRefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                        <span>{loading ? 'Loading...' : 'Refresh Data'}</span>
                     </Button>
                     <Button
                         variant="outline"
-                        href={`https://dashboard.internetcomputer.org/canister/${process.env.NEXT_PUBLIC_CANISTER_ID || 'rrkah-fqaaa-aaaaa-aaaaq-cai'}`}
+                        href={`https://dashboard.internetcomputer.org/canister/${process.env.NEXT_PUBLIC_CANISTER_ID || ''}`}
                         external
                     >
                         <FiExternalLink className="w-4 h-4" />
@@ -83,13 +91,58 @@ export default function DemoPage() {
                     </Button>
                 </div>
 
-                {/* Token Table */}
-                <div className="card p-0 overflow-hidden">
-                    <div className="p-4 border-b border-white/5">
-                        <h2 className="font-medium text-white">Recent Tokens</h2>
+                {/* Error State */}
+                {error && (
+                    <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-lg flex items-start gap-3">
+                        <FiAlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+                        <div>
+                            <p className="text-red-400 font-medium">Error loading tokens</p>
+                            <p className="text-red-400/80 text-sm">{error}</p>
+                            <p className="text-gray-500 text-xs mt-2">
+                                Make sure NEXT_PUBLIC_CANISTER_ID is set in your .env file
+                            </p>
+                        </div>
                     </div>
-                    <TokenTable tokens={mockTokens} />
-                </div>
+                )}
+
+                {/* Loading State */}
+                {loading && !error && (
+                    <div className="card p-12 text-center">
+                        <div className="inline-block w-8 h-8 border-4 border-accent border-t-transparent rounded-full animate-spin mb-4"></div>
+                        <p className="text-gray-400">Loading tokens from canister...</p>
+                    </div>
+                )}
+
+                {/* Empty State */}
+                {!loading && !error && tokens.length === 0 && (
+                    <div className="card p-12 text-center">
+                        <p className="text-gray-400 mb-4">No tokens found</p>
+                        <p className="text-gray-500 text-sm">
+                            Create your first token via Telegram bot!
+                        </p>
+                        <Button
+                            href={process.env.NEXT_PUBLIC_TELEGRAM_URL || '#'}
+                            external
+                            variant="primary"
+                            className="mt-4"
+                        >
+                            Open Telegram Bot
+                        </Button>
+                    </div>
+                )}
+
+                {/* Token Table - Only show if we have data */}
+                {!loading && !error && tokens.length > 0 && (
+                    <div className="card p-0 overflow-hidden">
+                        <div className="p-4 border-b border-white/5">
+                            <h2 className="font-medium text-white">Recent Tokens</h2>
+                            <p className="text-sm text-gray-500 mt-1">
+                                Showing {tokens.length} token{tokens.length !== 1 ? 's' : ''} from the canister
+                            </p>
+                        </div>
+                        <TokenTable tokens={uiTokens} />
+                    </div>
+                )}
 
                 {/* Info Box */}
                 <div className="mt-8 p-4 bg-accent/5 border border-accent/10 rounded-card">

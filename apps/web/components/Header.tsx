@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import Button from './Button'
+import WalletConnect from './WalletConnect'
 import { FiMessageCircle, FiMenu, FiX, FiGithub, FiMoon, FiSun } from 'react-icons/fi'
 import { useState, useEffect } from 'react'
 
@@ -36,7 +37,7 @@ export default function Header() {
                         <span className="text-xl font-semibold text-white">ElizaICP</span>
                     </Link>
 
-                    <nav className="hidden md:flex items-center gap-8">
+                    <nav className="hidden md:flex items-center gap-6">
                         <Link href="/demo" className="text-gray-400 hover:text-white transition-colors text-sm font-medium">
                             Demo
                         </Link>
@@ -60,6 +61,7 @@ export default function Header() {
                         >
                             {darkMode ? <FiSun className="w-5 h-5" /> : <FiMoon className="w-5 h-5" />}
                         </button>
+                        <WalletConnect />
                         <Button
                             href={process.env.NEXT_PUBLIC_TELEGRAM_URL || '#'}
                             external
