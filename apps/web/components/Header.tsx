@@ -40,6 +40,9 @@ export default function Header() {
                         <Link href="/demo" className="text-gray-400 hover:text-white transition-colors text-sm font-medium">
                             Demo
                         </Link>
+                        <Link href="/docs" className="text-gray-400 hover:text-white transition-colors text-sm font-medium">
+                            Docs
+                        </Link>
                         <Link href="/verify" className="text-gray-400 hover:text-white transition-colors text-sm font-medium">
                             Verify
                         </Link>
@@ -84,6 +87,13 @@ export default function Header() {
                             onClick={() => setMenuOpen(false)}
                         >
                             Demo
+                        </Link>
+                        <Link
+                            href="/docs"
+                            className="block py-2 text-gray-400 hover:text-white text-sm"
+                            onClick={() => setMenuOpen(false)}
+                        >
+                            Documentation
                         </Link>
                         <Link
                             href="/verify"
