@@ -2,44 +2,68 @@ name: Deploy Canisters
 
 on:
   workflow_dispatch:
+    inputs:
+      network:
+        description: 'Network to deploy to'
+        required: true
+        default: 'ic'
+        type: choice
+        options:
+          - ic
+          - local
   push:
     tags:
-      - 'v*.*.*'
+      - 'v*'
 
 jobs:
   deploy:
-    name: Deploy to ICP
     runs-on: ubuntu-latest
-
+    
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       - name: Install DFX
         run: |
-          sh -ci "$(curl -fsSL https://internetcomputer.org/install.sh)"
-          echo "$HOME/bin" >> $GITHUB_PATH
+          DFX_VERSION="0.23.0"
+          wget https://github.com/dfinity/sdk/releases/download/${DFX_VERSION}/dfx-${DFX_VERSION}-x86_64-linux.tar.gz
+          tar -xzf dfx-${DFX_VERSION}-x86_64-linux.tar.gz
+          mkdir -p $HOME/.local/share/dfx/bin
+          mv dfx $HOME/.local/share/dfx/bin/
+          chmod +x $HOME/.local/share/dfx/bin/dfx
+          echo "$HOME/.local/share/dfx/bin" >> $GITHUB_PATH
 
-      - name: Setup DFX Identity
-        env:
-          DFX_IDENTITY_PEM: ${{ secrets.DFX_IDENTITY_PEM }}
+      - name: Verify DFX
         run: |
-          mkdir -p ~/.config/dfx/identity/deployer
-          echo "$DFX_IDENTITY_PEM" > ~/.config/dfx/identity/deployer/identity.pem
+          export PATH="$HOME/.local/share/dfx/bin:$PATH"
+          dfx --version
+
+      - name: Create Identity
+        run: |
+          export PATH="$HOME/.local/share/dfx/bin:$PATH"
+          dfx identity new deployer --storage-mode plaintext || true
           dfx identity use deployer
-
-      - name: Build Canisters
+          
+      - name: Deploy Canister
         working-directory: packages/plugin-icp/canisters/token_factory
         run: |
-          dfx canister create --all --network ic || true
-          dfx build --network ic
+          export PATH="$HOME/.local/share/dfx/bin:$PATH"
+          dfx canister create token_factory --network ${{ github.event.inputs.network || 'ic' }} || true
+          dfx build token_factory
+          dfx deploy token_factory --network ${{ github.event.inputs.network || 'ic' }} --yes
 
-      - name: Deploy Canisters
+      - name: Get Canister ID
+        id: canister
         working-directory: packages/plugin-icp/canisters/token_factory
         run: |
-          dfx deploy --network ic
+          export PATH="$HOME/.local/share/dfx/bin:$PATH"
+          CANISTER_ID=$(dfx canister id token_factory --network ${{ github.event.inputs.network || 'ic' }})
+          echo "CANISTER_ID=$CANISTER_ID" >> $GITHUB_OUTPUT
+          echo "✅ Deployed: $CANISTER_ID"
+          echo "🔗 Dashboard: https://dashboard.internetcomputer.org/canister/$CANISTER_ID"
 
-      - name: Show Canister Info
-        working-directory: packages/plugin-icp/canisters/token_factory
+      - name: Summary
         run: |
-          echo "Canister ID: $(dfx canister id token_factory --network ic)"
-          dfx canister status token_factory --network ic
+          echo "## 🚀 Canister Deployed!" >> $GITHUB_STEP_SUMMARY
+          echo "**ID:** \`${{ steps.canister.outputs.CANISTER_ID }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "[Dashboard](https://dashboard.internetcomputer.org/canister/${{ steps.canister.outputs.CANISTER_ID }})" >> $GITHUB_STEP_SUMMARY
