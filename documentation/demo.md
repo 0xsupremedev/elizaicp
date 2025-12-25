@@ -3,7 +3,7 @@
 ## Quick Demo (5 Minutes)
 
 ### Step 1: Open Web Demo
-1. Navigate to https://web-virid-chi.vercel.app
+1. Navigate to https://elizaicp.vercel.app
 2. Explore the landing page
 3. Click **"View Demo"** to see live tokens
 

@@ -3,7 +3,7 @@ import { Principal } from '@dfinity/principal';
 import { db } from '../services/postgres';
 import { getTokenFactoryActor, fromOptional } from '../services/icp/canisterClient';
 
-const WEB_URL = process.env.WEB_URL || 'https://eliza-icp.vercel.app';
+const WEB_URL = process.env.WEB_URL || 'https://elizaicp.vercel.app';
 
 export function registerLinkIdentityCommand(bot: Telegraf) {
     // /link_identity - Primary command to start linking flow

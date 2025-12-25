@@ -55,7 +55,7 @@ If connected to Vercel:
 3. Deploys to public URL
 
 **You get:**
-- 🌐 **Production URL:** `https://web-virid-chi.vercel.app`
+- 🌐 **Production URL:** `https://elizaicp.vercel.app`
 - 🔄 **Preview URLs** for every PR
 
 **Judge benefit:** "Open this URL to see the live demo."
