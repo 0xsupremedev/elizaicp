@@ -1,14 +1,27 @@
 'use client'
 
-import { useState } from 'react'
-import { FiBook, FiCode, FiDatabase, FiShield, FiZap, FiCpu, FiMessageCircle, FiGlobe, FiTerminal, FiGitBranch, FiLayers, FiKey, FiClock } from 'react-icons/fi'
+import { useState, useMemo } from 'react'
+import { FiBook, FiCode, FiDatabase, FiShield, FiZap, FiCpu, FiMessageCircle, FiGlobe, FiTerminal, FiGitBranch, FiLayers, FiKey, FiClock, FiSearch, FiX } from 'react-icons/fi'
 import { SiTypescript, SiReact, SiNextdotjs, SiPostgresql, SiPrisma, SiOpenai, SiTelegram, SiDocker } from 'react-icons/si'
 import ExternalLink from '@/components/ExternalLink'
 
 type Section = 'overview' | 'architecture' | 'randomness' | 'telegram' | 'canister' | 'deployment' | 'api'
 
+// Searchable content index
+const searchIndex = [
+    { section: 'overview', keywords: ['elizaicp', 'what is', 'production', 'plugin', 'ai-powered', 'meme token', 'internet computer', 'icp', 'gpt-4', 'dall-e', 'openai', 'tech stack', 'typescript', 'react', 'next.js', 'postgresql', 'prisma', 'telegram', 'docker', 'features', 'randomness', 'bls signatures'], title: 'What is ElizaICP?', description: 'Overview of the ElizaICP plugin, tech stack, and key features' },
+    { section: 'architecture', keywords: ['architecture', 'system', 'user layer', 'plugin', 'node.js', 'canister', 'data flow', 'three-tier', 'commands', 'services', 'middleware', 'rate limiter'], title: 'System Architecture', description: 'Three-tier architecture: User Interface, Backend Plugin, Smart Contract' },
+    { section: 'randomness', keywords: ['raw_rand', 'randomness', 'on-chain', 'cryptographic', 'vrf', 'verifiable random function', 'bls', 'threshold', 'subnet', 'consensus', 'unpredictable', 'unbiasable', 'verifiable', 'motoko', 'security'], title: 'On-Chain Randomness', description: 'How ICP raw_rand provides cryptographically secure randomness' },
+    { section: 'telegram', keywords: ['telegram', 'bot', 'telegraf', 'commands', '/start', '/link_identity', '/create_token', '/status', '/my_tokens', '/my_identity', '/verify_link', '/help', 'token creation', 'workflow', 'flow'], title: 'Telegram Bot', description: 'Bot commands, token creation flow, and user interface' },
+    { section: 'canister', keywords: ['canister', 'smart contract', 'motoko', 'stable storage', 'timers', 'wallet linking', 'candid', 'interface', 'token factory', 'upgrade', 'persistence'], title: 'Smart Contract (Canister)', description: 'TokenFactory canister features and Candid interface' },
+    { section: 'deployment', keywords: ['deployment', 'deploy', 'dfx', 'docker', 'vercel', 'prerequisites', 'environment variables', 'telegram_bot_token', 'openai_api_key', 'postgres_url', 'internet_computer_private_key', 'canister_id', 'production'], title: 'Deployment Guide', description: 'How to deploy the bot, web app, and ICP canister' },
+    { section: 'api', keywords: ['api', 'reference', 'create_meme_token', 'get_token_status', 'prove_link', 'get_link_proof', 'list_tokens', 'finalize_mint', 'unlink_wallet', 'query', 'update', 'candid'], title: 'API Reference', description: 'TokenFactory canister methods and their usage' },
+]
+
 export default function DocsPage() {
     const [activeSection, setActiveSection] = useState<Section>('overview')
+    const [searchQuery, setSearchQuery] = useState('')
+    const [isSearchFocused, setIsSearchFocused] = useState(false)
 
     const sections = [
         { id: 'overview', label: 'Overview', icon: FiBook },
@@ -20,18 +33,91 @@ export default function DocsPage() {
         { id: 'api', label: 'API Reference', icon: FiTerminal },
     ]
 
+    // Search results
+    const searchResults = useMemo(() => {
+        if (!searchQuery.trim()) return []
+        const query = searchQuery.toLowerCase()
+        return searchIndex.filter(item =>
+            item.keywords.some(kw => kw.includes(query)) ||
+            item.title.toLowerCase().includes(query) ||
+            item.description.toLowerCase().includes(query)
+        )
+    }, [searchQuery])
+
+    const handleSearchSelect = (section: Section) => {
+        setActiveSection(section)
+        setSearchQuery('')
+        setIsSearchFocused(false)
+    }
+
     return (
         <div className="min-h-screen">
             <div className="container py-12">
                 {/* Header */}
-                <div className="text-center mb-12">
+                <div className="text-center mb-8">
                     <div className="w-16 h-16 bg-accent/10 rounded-full flex items-center justify-center mx-auto mb-4">
                         <FiBook className="w-8 h-8 text-accent" />
                     </div>
                     <h1 className="text-h1 text-white mb-4">Documentation</h1>
-                    <p className="text-gray-400 max-w-2xl mx-auto">
+                    <p className="text-gray-400 max-w-2xl mx-auto mb-6">
                         Complete technical documentation for ElizaICP - AI-powered meme tokens with provable on-chain randomness on the Internet Computer.
                     </p>
+
+                    {/* Search Bar */}
+                    <div className="max-w-xl mx-auto relative">
+                        <div className="relative">
+                            <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+                            <input
+                                type="text"
+                                placeholder="Search documentation... (e.g., raw_rand, telegram, deploy)"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                onFocus={() => setIsSearchFocused(true)}
+                                onBlur={() => setTimeout(() => setIsSearchFocused(false), 200)}
+                                className="w-full pl-12 pr-10 py-3 bg-card border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all"
+                            />
+                            {searchQuery && (
+                                <button
+                                    onClick={() => setSearchQuery('')}
+                                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white"
+                                >
+                                    <FiX className="w-4 h-4" />
+                                </button>
+                            )}
+                        </div>
+
+                        {/* Search Results Dropdown */}
+                        {isSearchFocused && searchQuery && (
+                            <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-white/10 rounded-lg shadow-xl z-50 overflow-hidden">
+                                {searchResults.length > 0 ? (
+                                    <div className="max-h-80 overflow-y-auto">
+                                        {searchResults.map((result) => {
+                                            const sectionData = sections.find(s => s.id === result.section)
+                                            const Icon = sectionData?.icon || FiBook
+                                            return (
+                                                <button
+                                                    key={result.section}
+                                                    onClick={() => handleSearchSelect(result.section as Section)}
+                                                    className="w-full flex items-start gap-3 px-4 py-3 hover:bg-muted text-left transition-colors border-b border-white/5 last:border-0"
+                                                >
+                                                    <Icon className="w-5 h-5 text-accent mt-0.5 flex-shrink-0" />
+                                                    <div>
+                                                        <p className="text-white font-medium text-sm">{result.title}</p>
+                                                        <p className="text-gray-500 text-xs">{result.description}</p>
+                                                    </div>
+                                                </button>
+                                            )
+                                        })}
+                                    </div>
+                                ) : (
+                                    <div className="px-4 py-6 text-center text-gray-500">
+                                        <FiSearch className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                                        <p className="text-sm">No results found for "{searchQuery}"</p>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 <div className="grid lg:grid-cols-4 gap-8">
@@ -43,8 +129,8 @@ export default function DocsPage() {
                                     key={section.id}
                                     onClick={() => setActiveSection(section.id as Section)}
                                     className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left text-sm transition-all ${activeSection === section.id
-                                            ? 'bg-accent text-white'
-                                            : 'text-gray-400 hover:bg-card hover:text-white'
+                                        ? 'bg-accent text-white'
+                                        : 'text-gray-400 hover:bg-card hover:text-white'
                                         }`}
                                 >
                                     <section.icon className="w-4 h-4" />
@@ -551,9 +637,7 @@ function ApiSection() {
             <div className="p-4 bg-accent/10 rounded-lg border border-accent/20">
                 <p className="text-sm text-gray-300">
                     <strong className="text-accent">GitHub Repository:</strong>{' '}
-                    <ExternalLink href="https://github.com/0xsupremedev/elizaicp" className="text-accent hover:underline">
-                        github.com/0xsupremedev/elizaicp
-                    </ExternalLink>
+                    <ExternalLink href="https://github.com/0xsupremedev/elizaicp" label="github.com/0xsupremedev/elizaicp" className="text-accent hover:underline" />
                 </p>
             </div>
         </div>
