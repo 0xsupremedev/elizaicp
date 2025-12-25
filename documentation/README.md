@@ -37,7 +37,7 @@
 
 ## Live URLs
 
-- **Web Demo:** https://eliza-icp.vercel.app
+- **Web Demo:** https://web-virid-chi.vercel.app
 - **Telegram Bot:** https://t.me/eliza_icp_bot
 - **GitHub:** https://github.com/your-username/eliza-icp
 - **ICP Dashboard:** https://dashboard.internetcomputer.org
