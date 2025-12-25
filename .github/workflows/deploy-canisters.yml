@@ -43,17 +43,15 @@ jobs:
           export PATH="$HOME/.local/share/dfx/bin:$PATH"
           dfx identity new deployer --storage-mode plaintext || true
           dfx identity use deployer
-          echo "🔐 Principal: $(dfx identity get-principal)"
+          PRINCIPAL=$(dfx identity get-principal)
+          echo "🔐 Deployer Principal: $PRINCIPAL"
+          echo "PRINCIPAL=$PRINCIPAL" >> $GITHUB_OUTPUT
 
-      - name: Redeem Cycles & Setup Wallet
+      - name: Check Cycles Balance
         run: |
           export PATH="$HOME/.local/share/dfx/bin:$PATH"
-          echo "🎟️ Redeeming AIAGENT2025 coupon..."
-          dfx cycles --network ic redeem-faucet-coupon AIAGENT2025 2>&1 || echo "⚠️ Coupon redemption had an issue (may already be redeemed)"
           echo "💰 Checking cycles balance..."
-          dfx cycles --network ic balance 2>&1 || echo "⚠️ Could not check balance with dfx cycles command"
-          echo "📊 Checking wallet..."
-          dfx wallet --network ic balance 2>&1 || echo "⚠️ Wallet not set up yet"
+          dfx cycles --network ic balance || echo "⚠️ Balance check failed (expected on first run)"
           
       - name: Deploy Canister
         working-directory: packages/plugin-icp/canisters/token_factory
